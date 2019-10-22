@@ -51,7 +51,6 @@ void StopPushbuttonDetectedISR()
 
 void setup() {
   flowMeterPulseCount = 0;
-  
   attachInterrupt(digitalPinToInterrupt(PIN3), StartPushbuttonDetectedISR, RISING);
   attachInterrupt(digitalPinToInterrupt(PIN4), StopPushbuttonDetectedISR, RISING);
 
