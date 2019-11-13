@@ -4,6 +4,21 @@ volatile uint64_t flowMeterPulseCount = 0;
 volatile bool isFilling = false;
 #define NUM_PULSES_FOR_15_LITRES 209785 // example
 
+
+/*
+
+Pin functions
+
+Pin2 - Flow Meter  (INT)
+Pin3 - Stop Pushbutton (INT)
+Pin4 - Start Pushbutton 
+Pin5 - Manual Pushbutton 
+Pin6 - Solenoid Output
+Pin7 - Buzzer Output 
+
+
+*/ 
+
 void digitalToggle(int pin);
 
 static uint64_t microLitresPerPulseLookup[5][2] = 
@@ -82,7 +97,7 @@ void StartPushbuttonDetectedISR()
       attachInterrupt(digitalPinToInterrupt(PIN2), FlowMeterPulseDetectedISR, RISING);
       //todo: set output to HIGH
 
-      digitalToggle(LED_BUILTIN);
+      //digitalToggle(LED_BUILTIN);
     }
     
   }
@@ -113,30 +128,48 @@ void StopPushbuttonDetectedISR()
   
 }
 
+#define FLOW_METER_PIN PIN2
+#define STOP_PB_PIN PIN3
+#define START_PB_PIN PIN4
+#define MANUAL_PB_PIN PIN5
+#define SOLENOID_PIN PIN6
+#define BUZZER_PIN PIN7
+#define TRIM_PIN PINA0
+
 
 void setup() {
   flowMeterPulseCount = 0;
-  pinMode(PIN2, INPUT_PULLUP); //flow meter
-  pinMode(PIN3, INPUT_PULLUP);
+  pinMode(FLOW_METER_PIN, INPUT_PULLUP); //flow meter
+  pinMode(STOP_PB_PIN, INPUT_PULLUP);
+  pinMode(START_PB_PIN, INPUT_PULLUP);
+  pinMode(MANUAL_PB_PIN, INPUT_PULLUP);
+  pinMode(SOLENOID_PIN, OUTPUT);
+  pinMode(BUZZER_PIN, OUTPUT);
   
-  
-  attachInterrupt(digitalPinToInterrupt(PIN3), StopPushbuttonDetectedISR, FALLING);
+  attachInterrupt(digitalPinToInterrupt(STOP_PB_PIN), StopPushbuttonDetectedISR, FALLING);
   //attachInterrupt(digitalPinToInterrupt(PIN_A3), StartPushbuttonDetectedISR, RISING);
   // TODO: cant use interrupts on any other that 2 and 3
 
 //test code
-  attachInterrupt(digitalPinToInterrupt(PIN2), FlowMeterPulseDetectedISR, RISING);
-  pinMode(LED_BUILTIN, OUTPUT);
-  //sei();
+  // attachInterrupt(digitalPinToInterrupt(FLOW_METER_PIN), FlowMeterPulseDetectedISR, RISING);
+  // pinMode(LED_BUILTIN, OUTPUT);
+  
+
+
   
   Serial.begin(9600);
   Serial.println("START");
+  digitalWrite(BUZZER_PIN, HIGH);
+  delay(1000);
+  digitalWrite(BUZZER_PIN, LOW);  
+
+
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
   // digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
-  Serial.println(map(analogRead(PIN_A0), 0,1024, 100, -100 ));
+  //Serial.println(map(analogRead(PINA0), 0,1024, 100, -100 ));
   
 
   delay(1000);                       // wait for a second
