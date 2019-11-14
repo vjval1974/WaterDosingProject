@@ -2,7 +2,7 @@
 
 volatile uint64_t flowMeterPulseCount = 0; 
 volatile bool isFilling = false;
-#define NUM_PULSES_FOR_15_LITRES 209785 // example
+#define NUM_PULSES_FOR_15_LITRES 200 // example
 
 
 /*
@@ -19,7 +19,25 @@ Pin7 - Buzzer Output
 
 */ 
 
+#define FLOW_METER_PIN PIN2
+#define STOP_PB_PIN PIN3
+#define START_PB_PIN PIN4
+#define MANUAL_PB_PIN PIN5
+#define SOLENOID_PIN PIN6
+#define BUZZER_PIN PIN7
+#define TRIM_PIN PINA0
+
 void digitalToggle(int pin);
+void Beep(); // uses delay - bad
+
+typedef enum {
+  STOPPED,
+  RUNNING, 
+  MANUAL, 
+  UNKNOWN
+} OutputState;
+
+OutputState state = UNKNOWN;
 
 static uint64_t microLitresPerPulseLookup[5][2] = 
 {
@@ -40,9 +58,9 @@ static uint64_t last = 0;
 uint64_t timeSinceLastPulse = now - last;
 uint64_t microLitresPerPulse = 0;
 
-if (timeSinceLastPulse <= 1000) // debouce/noise
+if (timeSinceLastPulse <= 1000) // debouce/noise -- Shouldnt need this
 {
-  last = now;
+  last = now; 
   return;
 }
 
@@ -64,7 +82,7 @@ if (timeSinceLastPulse <= 1000) // debouce/noise
   {
     isFilling = false;
     flowMeterPulseCount = 0;
-    
+     Serial.println("Full!");
 
 
     //todo: set output to LOW
@@ -82,27 +100,19 @@ void digitalToggle(int pin)
     digitalWrite(pin, HIGH);
 }
 
-void StartPushbuttonDetectedISR()
+
+void OnStartPushbuttonPressed()
 {
-  uint32_t now = millis();
-  cli();
-  static uint32_t last = 0;
-  
-  if (now - last > 500)
-  {
     Serial.println("StartPB Pressed");
+    Beep();
     if (isFilling == false)
     {
       flowMeterPulseCount = 0;
       attachInterrupt(digitalPinToInterrupt(PIN2), FlowMeterPulseDetectedISR, RISING);
-      //todo: set output to HIGH
+      digitalWrite(SOLENOID_PIN, HIGH);
 
-      //digitalToggle(LED_BUILTIN);
+
     }
-    
-  }
-  last = now;
-  sei();
 }
 
 void StopPushbuttonDetectedISR()
@@ -128,13 +138,7 @@ void StopPushbuttonDetectedISR()
   
 }
 
-#define FLOW_METER_PIN PIN2
-#define STOP_PB_PIN PIN3
-#define START_PB_PIN PIN4
-#define MANUAL_PB_PIN PIN5
-#define SOLENOID_PIN PIN6
-#define BUZZER_PIN PIN7
-#define TRIM_PIN PINA0
+
 
 
 void setup() {
@@ -151,22 +155,44 @@ void setup() {
   // TODO: cant use interrupts on any other that 2 and 3
 
 //test code
-  // attachInterrupt(digitalPinToInterrupt(FLOW_METER_PIN), FlowMeterPulseDetectedISR, RISING);
+   attachInterrupt(digitalPinToInterrupt(FLOW_METER_PIN), FlowMeterPulseDetectedISR, RISING);
   // pinMode(LED_BUILTIN, OUTPUT);
-  
-
-
   
   Serial.begin(9600);
   Serial.println("START");
-  digitalWrite(BUZZER_PIN, HIGH);
-  delay(1000);
-  digitalWrite(BUZZER_PIN, LOW);  
-
-
+  Beep();
+  state = UNKNOWN;
 }
 
 void loop() {
+
+  switch(state)
+  {
+    case UNKNOWN:
+    case STOPPED:
+    {
+      if (digitalRead(START_PB_PIN) == LOW)
+        {
+          OnStartPushbuttonPressed();
+          state = RUNNING;
+        }
+        else if (digitalRead(MANUAL_PB_PIN) == LOW)
+        {
+          state = MANUAL;
+
+        }
+      break;
+    }
+    case RUNNING:
+    {
+
+    }
+    case MANUAL:
+    {
+      break;
+    }
+  }
+  
   // put your main code here, to run repeatedly:
   // digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
   //Serial.println(map(analogRead(PINA0), 0,1024, 100, -100 ));
@@ -176,6 +202,16 @@ void loop() {
   // digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
   // delay(1000);       
 }
+
+
+void Beep() // uses delay - bad
+{
+  digitalWrite(BUZZER_PIN, HIGH);
+  delay(100);
+  digitalWrite(BUZZER_PIN, LOW);
+}
+
+
 
 
 
