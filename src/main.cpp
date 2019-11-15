@@ -120,6 +120,13 @@ void OnStopPushbuttonPressed()
   }
 }
 
+void OnManualPushbuttonPressed()
+{
+  Serial.println("ManualPB Pressed");
+  flowMeterPulseCount = 0;
+ 
+}
+
 void StopPushbuttonDetectedISR()
 {
   // uint32_t now = millis();
@@ -168,6 +175,7 @@ void setup()
 void loop()
 {
 static uint8_t lastState = 0;
+static uint16_t manualCount = 0;
 if (lastState != state)
   Serial.println(state);
 lastState = state;
@@ -183,6 +191,7 @@ lastState = state;
     }
     else if (digitalRead(MANUAL_PB_PIN) == HIGH)
     {
+      
       state = MANUAL;
     }
     break;
@@ -198,21 +207,33 @@ lastState = state;
   }
   case MANUAL:
   {
-    if (digitalRead(MANUAL_PB_PIN) == HIGH)
-    {
-      digitalWrite(SOLENOID_PIN, HIGH);
-      state = MANUAL;
-    }
-    if (digitalRead(START_PB_PIN) == HIGH)
-    {
-      OnStartPushbuttonPressed();
-      state = RUNNING;
-    }
-    if (digitalRead(STOP_PB_PIN) == LOW)
-    {
-      OnStopPushbuttonPressed();
-      state = STOPPED;
-    }
+    OnManualPushbuttonPressed();
+      if (digitalRead(MANUAL_PB_PIN) == HIGH)
+      {
+        if(manualCount >= 10)
+        {
+          digitalWrite(SOLENOID_PIN, HIGH);
+          Serial.println("Manual ON");
+          //OnManualPushbuttonPressed();
+        }
+        else 
+        {
+          digitalWrite(SOLENOID_PIN, LOW);
+          
+        }
+        state = MANUAL;
+        manualCount++;
+      }
+      else 
+      {
+        state = STOPPED;
+        digitalWrite(SOLENOID_PIN, LOW);
+        manualCount = 0;
+        
+      }
+      
+    
+    
     break;
   }
   }
@@ -229,6 +250,6 @@ lastState = state;
 void Beep() // uses delay - bad
 {
   digitalWrite(BUZZER_PIN, HIGH);
-  delay(50);
+  delay(20);
   digitalWrite(BUZZER_PIN, LOW);
 }
