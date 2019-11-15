@@ -2,6 +2,12 @@
 
 volatile uint64_t flowMeterPulseCount = 0;
 volatile bool isFilling = false;
+volatile long unsigned timeSinceLastPulse = 0;
+volatile long unsigned microLitresPerPulse = 0;
+
+volatile long unsigned now = 0;
+ char buf[50];
+ char buf1[50];
 #define NUM_PULSES_FOR_15_LITRES 200 // example
 
 /*
@@ -47,15 +53,17 @@ static uint64_t microLitresPerPulseLookup[5][2] =
         {15267, 2035},
         {12195, 2031}};
 
+static uint64_t last = 0;
+
 void FlowMeterPulseDetectedISR()
 {
 
-  uint64_t now = micros();
-  cli();
-  static uint64_t last = 0;
+  now = micros();
+  
+  
 
-  uint64_t timeSinceLastPulse = now - last;
-  uint64_t microLitresPerPulse = 0;
+  timeSinceLastPulse = now - last;
+  
 
   if (timeSinceLastPulse <= 1000) // debouce/noise -- Shouldnt need this
   {
@@ -72,9 +80,11 @@ void FlowMeterPulseDetectedISR()
   //     microLitresPerPulse
   //   }
   //}
-  char buf[50];
-  sprintf(buf, "PulseCount=%d", flowMeterPulseCount);
-  Serial.println(buf);
+  
+  sprintf(buf, "PulseCount=%lu", flowMeterPulseCount);
+  sprintf(buf1, "timediff=%lu", timeSinceLastPulse);
+  
+  Serial.println(buf1);
   digitalToggle(LED_BUILTIN);
 
   if (flowMeterPulseCount++ >= NUM_PULSES_FOR_15_LITRES)
@@ -87,7 +97,8 @@ void FlowMeterPulseDetectedISR()
   }
 
   last = now;
-  sei();
+  Serial.println(buf);
+ 
 }
 
 void digitalToggle(int pin)
