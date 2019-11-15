@@ -122,23 +122,23 @@ void OnStopPushbuttonPressed()
 
 void StopPushbuttonDetectedISR()
 {
-  uint32_t now = millis();
-  cli();
-  static uint32_t last = 0;
+  // uint32_t now = millis();
+  // cli();
+  // static uint32_t last = 0;
 
-  Serial.println("StopPB Pressed");
-  if (now - last > 50)
-  {
+  // Serial.println("StopPB Pressed");
+  // if (now - last > 50)
+  // {
 
-    if (isFilling == true)
-    {
-      detachInterrupt(digitalPinToInterrupt(PIN2));
-      flowMeterPulseCount = 0;
-      //todo: set output to LOW
-    }
-  }
-  last = now;
-  sei();
+  //   if (isFilling == true)
+  //   {
+  //     detachInterrupt(digitalPinToInterrupt(PIN2));
+  //     flowMeterPulseCount = 0;
+  //     //todo: set output to LOW
+  //   }
+  // }
+  // last = now;
+  // sei();
 }
 
 void setup()
@@ -167,18 +167,21 @@ void setup()
 
 void loop()
 {
-
+uint8_t lastState = 0;
+if (lastState != state)
+  Serial.println(state);
+lastState = state;
   switch (state)
   {
   case UNKNOWN:
   case STOPPED:
   {
-    if (digitalRead(START_PB_PIN) == LOW)
+    if (digitalRead(START_PB_PIN) == HIGH)
     {
       OnStartPushbuttonPressed();
       state = RUNNING;
     }
-    else if (digitalRead(MANUAL_PB_PIN) == LOW)
+    else if (digitalRead(MANUAL_PB_PIN) == HIGH)
     {
       state = MANUAL;
     }
@@ -189,12 +192,12 @@ void loop()
   }
   case MANUAL:
   {
-    if (digitalRead(MANUAL_PB_PIN) == LOW)
+    if (digitalRead(MANUAL_PB_PIN) == HIGH)
     {
       digitalWrite(SOLENOID_PIN, HIGH);
       state = MANUAL;
     }
-    if (digitalRead(START_PB_PIN) == LOW)
+    if (digitalRead(START_PB_PIN) == HIGH)
     {
       OnStartPushbuttonPressed();
       state = RUNNING;
@@ -212,7 +215,7 @@ void loop()
   // digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
   //Serial.println(map(analogRead(PINA0), 0,1024, 100, -100 ));
 
-  delay(1000); // wait for a second
+  delay(100); // wait for a second
   // digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
   // delay(1000);
 }
@@ -220,6 +223,6 @@ void loop()
 void Beep() // uses delay - bad
 {
   digitalWrite(BUZZER_PIN, HIGH);
-  delay(100);
+  delay(50);
   digitalWrite(BUZZER_PIN, LOW);
 }
