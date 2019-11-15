@@ -167,7 +167,7 @@ void setup()
 
 void loop()
 {
-uint8_t lastState = 0;
+static uint8_t lastState = 0;
 if (lastState != state)
   Serial.println(state);
 lastState = state;
@@ -189,6 +189,12 @@ lastState = state;
   }
   case RUNNING:
   {
+    if (digitalRead(STOP_PB_PIN) == LOW)
+    {
+      OnStopPushbuttonPressed();
+      state = STOPPED;
+    }
+    break;
   }
   case MANUAL:
   {
