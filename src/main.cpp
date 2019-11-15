@@ -118,6 +118,7 @@ void OnStartPushbuttonPressed()
     flowMeterPulseCount = 0;
     attachInterrupt(digitalPinToInterrupt(PIN2), FlowMeterPulseDetectedISR, RISING);
     digitalWrite(SOLENOID_PIN, HIGH);
+    isFilling = true;
   }
 }
 
@@ -128,6 +129,7 @@ void OnStopPushbuttonPressed()
   if (isFilling == true)
   {
     digitalWrite(SOLENOID_PIN, LOW);
+    isFilling = false;
   }
 }
 
