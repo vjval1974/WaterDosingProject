@@ -92,6 +92,9 @@ void FlowMeterPulseDetectedISR()
     isFilling = false;
     flowMeterPulseCount = 0;
     Serial.println("Full!");
+    state = STOPPED;
+    digitalWrite(SOLENOID_PIN, LOW);
+
 
     //todo: set output to LOW
   }
