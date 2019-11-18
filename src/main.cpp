@@ -1,15 +1,5 @@
 #include <Arduino.h>
 
-volatile uint64_t flowMeterPulseCount = 0;
-volatile bool isFilling = false;
-volatile long unsigned timeSinceLastPulse = 0;
-volatile long unsigned microLitresPerPulse = 0;
-
-volatile long unsigned now = 0;
- char buf[50];
- char buf1[50];
-#define NUM_PULSES_FOR_15_LITRES 200 // example
-
 /*
 
 Pin functions
@@ -24,6 +14,17 @@ Pin7 - Buzzer Output
 
 */
 
+
+volatile uint64_t flowMeterPulseCount = 0;
+volatile bool isFilling = false;
+volatile long unsigned timeSinceLastPulse = 0;
+volatile long unsigned microLitresPerPulse = 0;
+volatile long unsigned now = 0;
+
+char buf[50];
+char buf1[50];
+
+#define NUM_PULSES_FOR_15_LITRES 200 // example
 #define FLOW_METER_PIN PIN2
 #define STOP_PB_PIN PIN3
 #define START_PB_PIN PIN4
@@ -32,9 +33,12 @@ Pin7 - Buzzer Output
 #define BUZZER_PIN PIN7
 #define TRIM_PIN PINA0
 
+
+// Prototypes
 void digitalToggle(int pin);
 void Beep(); // uses delay - bad
 
+// State
 typedef enum
 {
   STOPPED,
@@ -42,7 +46,6 @@ typedef enum
   MANUAL,
   UNKNOWN
 } OutputState;
-
 OutputState state = UNKNOWN;
 
 static uint64_t microLitresPerPulseLookup[5][2] =
@@ -57,34 +60,14 @@ static uint64_t last = 0;
 
 void FlowMeterPulseDetectedISR()
 {
-
-  now = micros();
-  
-  
-
+  now = micros(); 
   timeSinceLastPulse = now - last;
-  
 
-  if (timeSinceLastPulse <= 1000) // debouce/noise -- Shouldnt need this
-  {
-    last = now;
-    return;
-  }
-
-  // need frequency/period to determine flow rate per pulse.
-
-  // for (int i = 0; i < 5; i++)
-  // {
-  //   if (timeSinceLastPulse >= microLitresPerPulseLookup[i][0])
-  //   {
-  //     microLitresPerPulse
-  //   }
-  //}
-  
   sprintf(buf, "PulseCount=%lu", flowMeterPulseCount);
   sprintf(buf1, "timediff=%lu", timeSinceLastPulse);
-  
   Serial.println(buf1);
+  Serial.println(buf);
+
   digitalToggle(LED_BUILTIN);
 
   if (flowMeterPulseCount++ >= NUM_PULSES_FOR_15_LITRES)
@@ -94,23 +77,11 @@ void FlowMeterPulseDetectedISR()
     Serial.println("Full!");
     state = STOPPED;
     digitalWrite(SOLENOID_PIN, LOW);
-
-
-    //todo: set output to LOW
   }
-
   last = now;
-  Serial.println(buf);
  
 }
 
-void digitalToggle(int pin)
-{
-  if (digitalRead(pin) == HIGH)
-    digitalWrite(pin, LOW);
-  else
-    digitalWrite(pin, HIGH);
-}
 
 void OnStartPushbuttonPressed()
 {
@@ -132,6 +103,7 @@ void OnStopPushbuttonPressed()
   if (isFilling == true)
   {
     digitalWrite(SOLENOID_PIN, LOW);
+    detachInterrupt(digitalPinToInterrupt(PIN2));
     isFilling = false;
   }
 }
@@ -140,28 +112,6 @@ void OnManualPushbuttonPressed()
 {
   Serial.println("ManualPB Pressed");
   flowMeterPulseCount = 0;
- 
-}
-
-void StopPushbuttonDetectedISR()
-{
-  // uint32_t now = millis();
-  // cli();
-  // static uint32_t last = 0;
-
-  // Serial.println("StopPB Pressed");
-  // if (now - last > 50)
-  // {
-
-  //   if (isFilling == true)
-  //   {
-  //     detachInterrupt(digitalPinToInterrupt(PIN2));
-  //     flowMeterPulseCount = 0;
-  //     //todo: set output to LOW
-  //   }
-  // }
-  // last = now;
-  // sei();
 }
 
 void setup()
@@ -174,13 +124,6 @@ void setup()
   pinMode(SOLENOID_PIN, OUTPUT);
   pinMode(BUZZER_PIN, OUTPUT);
 
-  //attachInterrupt(digitalPinToInterrupt(STOP_PB_PIN), StopPushbuttonDetectedISR, FALLING);
-  //attachInterrupt(digitalPinToInterrupt(PIN_A3), StartPushbuttonDetectedISR, RISING);
-  // TODO: cant use interrupts on any other that 2 and 3
-
-  //test code
-  attachInterrupt(digitalPinToInterrupt(FLOW_METER_PIN), FlowMeterPulseDetectedISR, RISING);
-  // pinMode(LED_BUILTIN, OUTPUT);
 
   Serial.begin(9600);
   Serial.println("START");
@@ -254,13 +197,7 @@ lastState = state;
   }
   }
 
-  // put your main code here, to run repeatedly:
-  // digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
-  //Serial.println(map(analogRead(PINA0), 0,1024, 100, -100 ));
-
   delay(100); // wait for a second
-  // digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
-  // delay(1000);
 }
 
 void Beep() // uses delay - bad
@@ -269,3 +206,12 @@ void Beep() // uses delay - bad
   delay(20);
   digitalWrite(BUZZER_PIN, LOW);
 }
+
+void digitalToggle(int pin)
+{
+  if (digitalRead(pin) == HIGH)
+    digitalWrite(pin, LOW);
+  else
+    digitalWrite(pin, HIGH);
+}
+
