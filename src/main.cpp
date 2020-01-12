@@ -26,8 +26,8 @@ char buf[50];
 char buf1[50];
 
 #define NUM_PULSES_FOR_15_LITRES 2000 // example
-#define NUM_PULSES_PER_LITRE 90
-#define FORTY_FIVE_LITRES_IN_PULSES (25 * NUM_PULSES_PER_LITRE)
+#define NUM_PULSES_PER_LITRE 270
+#define FORTY_FIVE_LITRES_IN_PULSES (45 * NUM_PULSES_PER_LITRE)
 #define FLOW_METER_PIN PIN2
 #define STOP_PB_PIN PIN3
 #define START_PB_PIN PIN4
@@ -51,29 +51,29 @@ typedef enum
 } OutputState;
 OutputState state = UNKNOWN;
 
-static uint64_t microLitresPerPulseLookup[5][2] =
-    {
-        {62500, 2083},
-        {30769, 2051},
-        {20283, 2028},
-        {15267, 2035},
-        {12195, 2031}};
+// static uint64_t microLitresPerPulseLookup[5][2] =
+//     {
+//         {62500, 2083},
+//         {30769, 2051},
+//         {20283, 2028},
+//         {15267, 2035},
+//         {12195, 2031}};
 
 static uint64_t last = 0;
 
 void FlowMeterPulseDetectedISR()
 {
-  now = micros(); 
-  timeSinceLastPulse = now - last;
+  //now = micros(); 
+  //timeSinceLastPulse = now - last;
 
   digitalToggle(LED_BUILTIN);
   long offset = (long)(FORTY_FIVE_LITRES_IN_PULSES * offsetPct) / 100;
-  Serial.println(offset);
+  
   if (flowMeterPulseCount++ >= (FORTY_FIVE_LITRES_IN_PULSES + offset))
   {
     isFilling = false;
     flowMeterPulseCount = 0;
-    //Serial.println("Full!");
+    
     state = STOPPED;
     digitalWrite(SOLENOID_PIN, LOW);
   }
@@ -84,13 +84,13 @@ void FlowMeterPulseDetectedISR()
 
 void OnStartPushbuttonPressed()
 {
-  Serial.println("StartPB Pressed");
+  //Serial.println("StartPB Pressed");
   Beep();
   if (isFilling == false)
   {
     flowMeterPulseCount = 0;
-    offsetPct = map(analogRead(TRIM_PIN), 1023, 0, -20, 20);
-    Serial.println(offsetPct);
+    offsetPct = map(analogRead(TRIM_PIN), 1023, 0, 20, -20);
+    //Serial.println(offsetPct);
     attachInterrupt(digitalPinToInterrupt(PIN2), FlowMeterPulseDetectedISR, RISING);
     digitalWrite(SOLENOID_PIN, HIGH);
     isFilling = true;
@@ -99,7 +99,7 @@ void OnStartPushbuttonPressed()
 
 void OnStopPushbuttonPressed()
 {
-  Serial.println("StopPB Pressed");
+  //Serial.println("StopPB Pressed");
   Beep();
   if (isFilling == true)
   {
@@ -111,7 +111,7 @@ void OnStopPushbuttonPressed()
 
 void OnManualPushbuttonPressed()
 {
-  Serial.println("ManualPB Pressed");
+  //Serial.println("ManualPB Pressed");
   flowMeterPulseCount = 0;
 }
 
@@ -126,8 +126,8 @@ void setup()
   pinMode(BUZZER_PIN, OUTPUT);
 
 
-  Serial.begin(9600);
-  Serial.println("START");
+  //Serial.begin(9600);
+  //Serial.println("START");
   Beep();
   state = UNKNOWN;
 }
@@ -138,10 +138,10 @@ void loop()
 {
 static uint8_t lastState = 0;
 static uint16_t manualCount = 0;
-//Serial.println(map(analogRead(TRIM_PIN), 1023, 0, 20, -20));
+//Serial.println((long)flowMeterPulseCount);
 
-if (lastState != state)
-  Serial.println(state);
+// if (lastState != state)
+//   Serial.println(state);
 lastState = state;
   switch (state)
   {
@@ -177,7 +177,7 @@ lastState = state;
           if(manualCount >= 10)
           {
             digitalWrite(SOLENOID_PIN, HIGH);
-            Serial.println("Manual ON");
+            //Serial.println("Manual ON");
             //OnManualPushbuttonPressed();
           }
           else 
