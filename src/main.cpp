@@ -145,61 +145,58 @@ if (lastState != state)
 lastState = state;
   switch (state)
   {
-  case UNKNOWN:
-  case STOPPED:
-  {
-    if (digitalRead(START_PB_PIN) == HIGH)
+    case UNKNOWN:
+    case STOPPED:
     {
-      OnStartPushbuttonPressed();
-      state = RUNNING;
-    }
-    else if (digitalRead(MANUAL_PB_PIN) == HIGH)
-    {
-      
-      state = MANUAL;
-    }
-    break;
-  }
-  case RUNNING:
-  {
-    if (digitalRead(STOP_PB_PIN) == LOW)
-    {
-      OnStopPushbuttonPressed();
-      state = STOPPED;
-    }
-    break;
-  }
-  case MANUAL:
-  {
-    OnManualPushbuttonPressed();
-      if (digitalRead(MANUAL_PB_PIN) == HIGH)
+      if (digitalRead(START_PB_PIN) == HIGH)
       {
-        if(manualCount >= 10)
+        OnStartPushbuttonPressed();
+        state = RUNNING;
+      }
+      else if (digitalRead(MANUAL_PB_PIN) == HIGH)
+      {
+        
+        state = MANUAL;
+      }
+      break;
+    }
+    case RUNNING:
+    {
+      if (digitalRead(STOP_PB_PIN) == LOW)
+      {
+        OnStopPushbuttonPressed();
+        state = STOPPED;
+      }
+      break;
+    }
+    case MANUAL:
+    {
+      OnManualPushbuttonPressed();
+        if (digitalRead(MANUAL_PB_PIN) == HIGH)
         {
-          digitalWrite(SOLENOID_PIN, HIGH);
-          Serial.println("Manual ON");
-          //OnManualPushbuttonPressed();
+          if(manualCount >= 10)
+          {
+            digitalWrite(SOLENOID_PIN, HIGH);
+            Serial.println("Manual ON");
+            //OnManualPushbuttonPressed();
+          }
+          else 
+          {
+            digitalWrite(SOLENOID_PIN, LOW);
+            
+          }
+          state = MANUAL;
+          manualCount++;
         }
         else 
         {
+          state = STOPPED;
           digitalWrite(SOLENOID_PIN, LOW);
+          manualCount = 0;
           
         }
-        state = MANUAL;
-        manualCount++;
-      }
-      else 
-      {
-        state = STOPPED;
-        digitalWrite(SOLENOID_PIN, LOW);
-        manualCount = 0;
-        
-      }
-      
-    
-    
-    break;
-  }
+      break;
+    }
   }
 
   delay(100); // wait for a second
