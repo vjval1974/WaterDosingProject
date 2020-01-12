@@ -20,18 +20,21 @@ volatile bool isFilling = false;
 volatile long unsigned timeSinceLastPulse = 0;
 volatile long unsigned microLitresPerPulse = 0;
 volatile long unsigned now = 0;
+volatile long offsetPct;
 
 char buf[50];
 char buf1[50];
 
-#define NUM_PULSES_FOR_15_LITRES 200 // example
+#define NUM_PULSES_FOR_15_LITRES 2000 // example
+#define NUM_PULSES_PER_LITRE 90
+#define FORTY_FIVE_LITRES_IN_PULSES (25 * NUM_PULSES_PER_LITRE)
 #define FLOW_METER_PIN PIN2
 #define STOP_PB_PIN PIN3
 #define START_PB_PIN PIN4
 #define MANUAL_PB_PIN PIN5
 #define SOLENOID_PIN PIN6
 #define BUZZER_PIN PIN7
-#define TRIM_PIN PINA0
+#define TRIM_PIN A0
 
 
 // Prototypes
@@ -63,18 +66,14 @@ void FlowMeterPulseDetectedISR()
   now = micros(); 
   timeSinceLastPulse = now - last;
 
-  sprintf(buf, "PulseCount=%lu", flowMeterPulseCount);
-  sprintf(buf1, "timediff=%lu", timeSinceLastPulse);
-  Serial.println(buf1);
-  Serial.println(buf);
-
   digitalToggle(LED_BUILTIN);
-
-  if (flowMeterPulseCount++ >= NUM_PULSES_FOR_15_LITRES)
+  long offset = (long)(FORTY_FIVE_LITRES_IN_PULSES * offsetPct) / 100;
+  Serial.println(offset);
+  if (flowMeterPulseCount++ >= (FORTY_FIVE_LITRES_IN_PULSES + offset))
   {
     isFilling = false;
     flowMeterPulseCount = 0;
-    Serial.println("Full!");
+    //Serial.println("Full!");
     state = STOPPED;
     digitalWrite(SOLENOID_PIN, LOW);
   }
@@ -90,6 +89,8 @@ void OnStartPushbuttonPressed()
   if (isFilling == false)
   {
     flowMeterPulseCount = 0;
+    offsetPct = map(analogRead(TRIM_PIN), 1023, 0, -20, 20);
+    Serial.println(offsetPct);
     attachInterrupt(digitalPinToInterrupt(PIN2), FlowMeterPulseDetectedISR, RISING);
     digitalWrite(SOLENOID_PIN, HIGH);
     isFilling = true;
@@ -131,10 +132,14 @@ void setup()
   state = UNKNOWN;
 }
 
+
+
 void loop()
 {
 static uint8_t lastState = 0;
 static uint16_t manualCount = 0;
+//Serial.println(map(analogRead(TRIM_PIN), 1023, 0, 20, -20));
+
 if (lastState != state)
   Serial.println(state);
 lastState = state;
