@@ -27,7 +27,7 @@ char buf1[50];
 
 #define NUM_PULSES_FOR_15_LITRES 2000 // example
 #define NUM_PULSES_PER_LITRE 270
-#define FORTY_FIVE_LITRES_IN_PULSES (45 * NUM_PULSES_PER_LITRE)
+#define THIRTY_LITRES_IN_PULSES (45 * NUM_PULSES_PER_LITRE)
 #define FLOW_METER_PIN PIN2
 #define STOP_PB_PIN PIN3
 #define START_PB_PIN PIN4
@@ -67,9 +67,9 @@ void FlowMeterPulseDetectedISR()
   //timeSinceLastPulse = now - last;
 
   digitalToggle(LED_BUILTIN);
-  long offset = (long)(FORTY_FIVE_LITRES_IN_PULSES * offsetPct) / 100;
+  long offset = (long)(THIRTY_LITRES_IN_PULSES * offsetPct) / 100;
   
-  if (flowMeterPulseCount++ >= (FORTY_FIVE_LITRES_IN_PULSES + offset))
+  if (flowMeterPulseCount++ >= (THIRTY_LITRES_IN_PULSES + offset))
   {
     isFilling = false;
     flowMeterPulseCount = 0;
@@ -89,7 +89,7 @@ void OnStartPushbuttonPressed()
   if (isFilling == false)
   {
     flowMeterPulseCount = 0;
-    offsetPct = map(analogRead(TRIM_PIN), 1023, 0, 20, -20);
+    offsetPct = map(analogRead(TRIM_PIN), 1023, 0, 30, -30);
     //Serial.println(offsetPct);
     attachInterrupt(digitalPinToInterrupt(PIN2), FlowMeterPulseDetectedISR, RISING);
     digitalWrite(SOLENOID_PIN, HIGH);
